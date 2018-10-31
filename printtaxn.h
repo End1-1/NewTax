@@ -49,7 +49,7 @@ public:
     int printTaxback(int number, const QString &crn, QString &outInJson, QString &outOutJson, QString &err);
     QJsonDocument fJSONDoc;
     QString fPartnerTin;
-    static void parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal, QString &number, QString &sn, QString &address);
+    static void parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal, QString &number, QString &sn, QString &address, QString &devnum, QString &time);
 signals:
     void done(int code, const QString &message);
 public slots:

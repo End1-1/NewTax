@@ -7,6 +7,7 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QJsonObject>
+#include <QDateTime>
 #include <QRegExp>
 #ifdef WIN32
     #include <winsock2.h>
@@ -142,7 +143,7 @@ void PrintTaxN::decryptData(const QByteArray &k, QByteArray &inData, QByteArray 
 }
 
 void PrintTaxN::parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal,
-                              QString &number, QString &sn, QString &address)
+                              QString &number, QString &sn, QString &address, QString &devnum, QString &time)
 {
     int pos = in.indexOf("\"rseq\":") + 7;
     int pos2 = in.indexOf(",", pos );
@@ -164,6 +165,13 @@ void PrintTaxN::parseResponse(const QString &in, QString &firm, QString &hvhh, Q
     pos = in.indexOf("\"address\":\"") + 11;
     pos2 = in.indexOf("\"", pos + 1);
     address = in.mid(pos, pos2 - pos);
+    pos = in.indexOf("\"crn\":") + 7;
+    pos2 = in.indexOf("\"", pos + 1);
+    devnum = in.mid(pos, pos2 - pos);
+    pos = in.indexOf("\"time\":") + 7;
+    pos2 = in.indexOf(",", pos + 1);
+    time = in.mid(pos, pos2 - pos);
+    time = QDateTime::fromMSecsSinceEpoch(time.toDouble()).toString("dd.MM.yyyy HH:mm:ss");
 }
 
 PrintTaxN::PrintTaxN()
