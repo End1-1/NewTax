@@ -1,7 +1,6 @@
 #include "printtaxn.h"
 #include "openssl/des.h"
 #include <QDataStream>
-#include <QDebug>
 #include <QCryptographicHash>
 #include <QByteArray>
 #include <QTcpSocket>
@@ -50,7 +49,7 @@ int PrintTaxN::getResponse(QByteArray &out, QString &err)
     out.clear();
     quint8 fd[11];
     quint64 bytesTotal;
-    if (fTcpSocket.waitForReadyRead(130000)) {
+    if (fTcpSocket.waitForReadyRead(1300000)) {
         bytesTotal = fTcpSocket.bytesAvailable();
         fTcpSocket.read(reinterpret_cast<char*>(&fd[0]), 11);
         bytesTotal -= 11;
@@ -185,7 +184,7 @@ PrintTaxN::PrintTaxN()
     fJsonHeader["userExtPOS"] = "true";
 }
 
-PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, QObject *parent) :
+PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, QObject *parent) :
     QObject(parent)
 {
     setParams(ip, port, password);
@@ -196,7 +195,7 @@ PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, QObje
     fJsonHeader["paidAmount"] = 0.0;
     fJsonHeader["paidAmountCard"] = 0.0;
     fJsonHeader["prePaymentAmount"] = 0.0;
-    fJsonHeader["userExtPOS"] = "true";
+    fJsonHeader["userExtPOS"] = extPos;
 }
 
 void PrintTaxN::setParams(const QString &ip, int port, const QString &password)
@@ -402,7 +401,7 @@ int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson,
     int result = printJSON(jdata, err, opcode_PrintTaxN);
     outOutJson = jdata;
 #ifdef QT_DEBUG
-    outOutJson = "{\"rseq\":77,\"crn\":\"53219917\",\"sn\":\"V90413506068\",\"tin\":\"01546961\",\"taxpayer\":\"«ՋԱԶԶՎԵ»\",\"address\":\"ԿԵՆՏՐՈՆ ԹԱՂԱՄԱՍ ԵՆՏՐՈՆ ԹԱՂԱՄԱՍ ԵՆՏՐՈՆ ԹԱՂԱՄԱՍ Թումանյան 34/13\",\"time\":1527853613000.0,\"fiscal\":\"98802057\",\"lottery\":\"00000000\",\"prize\":0,\"total\":1540.0,\"change\":0.0}";
+    outOutJson = "{\"rseq\":77,\"crn\":\"53219917\",\"sn\":\"V98745506068\",\"tin\":\"01588771\",\"taxpayer\":\"«Ջազզվե ՍՊԸ»\",\"address\":\"Արշակունյանց 34\",\"time\":1527853613000.0,\"fiscal\":\"98802057\",\"lottery\":\"00000000\",\"prize\":0,\"total\":1540.0,\"change\":0.0}";
     result = 0;
 #endif
     return result;
@@ -413,9 +412,10 @@ int PrintTaxN::printAdvanceJson(double advanceCash, double advanceCard, QString 
     outInJson = QString ("{\"seq\":1, "
               "\"paidAmount\":%1, \"paidAmountCard\":%2,"
               "\"prePaymentAmount\":0.0,"
-              "\"mode\":3, \"useExtPOS\":true}")
+              "\"mode\":3, \"useExtPOS\":%3}")
             .arg(advanceCash)
-            .arg(advanceCard);
+            .arg(advanceCard)
+            .arg(fJsonHeader["userExtPOS"].toString());
     QByteArray jdata = outInJson.toUtf8();
     int result = printJSON(jdata, err, opcode_PrintTaxN);
     outOutJson = jdata;

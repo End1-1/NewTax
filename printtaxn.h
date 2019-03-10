@@ -39,7 +39,7 @@ class PrintTaxN : public QObject
     QList<QMap<QString, QVariant> > fJsonGoods;
 public:
     PrintTaxN();
-    explicit PrintTaxN(const QString &ip, int port, const QString &password, QObject *parent = nullptr);
+    explicit PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, QObject *parent = nullptr);
     void setParams(const QString &ip, int port, const QString &password);
     void initErrors();
     int printJSON(QByteArray &jsonData, QString &err, quint8 opcode);
