@@ -103,14 +103,13 @@ void PrintTax::cryptData(const QByteArray &k, QByteArray &inData, QByteArray &ou
     DES_set_key_unchecked((const_DES_cblock*)block_key, &ks3);
 
     qint16 srcLen = inData.length();
-    char out[srcLen];
-    memset(&out, 0, srcLen);
+    char *out = new char[srcLen];
+    memset(out, 0, srcLen);
     for (int i = 0; i < srcLen; i += 8) {
         DES_ecb3_encrypt((const_DES_cblock*)&inData.data()[i], (DES_cblock*)&out[i], &ks, &ks2, &ks3, DES_ENCRYPT);
     }
     outData.append(&out[0], srcLen);
-
-
+    delete [] out;
 }
 
 void PrintTax::decryptData(const QByteArray &k, QByteArray &inData, QByteArray &outData)
@@ -133,12 +132,13 @@ void PrintTax::decryptData(const QByteArray &k, QByteArray &inData, QByteArray &
     memcpy(block_key, key + 16, 8);
     DES_set_key_unchecked((const_DES_cblock*)block_key, &ks3);
 
-    char out[inData.length()];
-    memset(&out, 0, inData.length());
+    char *out = new char[inData.length()];
+    memset(out, 0, inData.length());
     for (int i = 0; i < inData.length(); i += 8) {
         DES_ecb3_encrypt((const_DES_cblock*)&inData.data()[i], (DES_cblock*)&out[i], &ks, &ks2, &ks3, DES_DECRYPT);
     }
     outData.append(out, inData.length());
+    delete [] out;
 }
 
 PrintTax::PrintTax(const QString &ip, int port, const QString &password, QObject *parent) :

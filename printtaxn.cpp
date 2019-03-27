@@ -1,5 +1,5 @@
 #include "printtaxn.h"
-#include "openssl/des.h"
+#include "des.h"
 #include <QDataStream>
 #include <QCryptographicHash>
 #include <QByteArray>
@@ -7,12 +7,13 @@
 #include <QHostAddress>
 #include <QJsonObject>
 #include <QDateTime>
+#include <QSqlError>
 #include <QRegExp>
 #ifdef WIN32
     #include <winsock2.h>
 #endif
 
-quint8 firstdata[] = {213, 128, 212, 180, 213, 132, 0, 5, 2, 0, 0, 0};
+static quint8 firstdata[] = {213, 128, 212, 180, 213, 132, 0, 5, 2, 0, 0, 0};
 QMap<int, QString> PrintTaxN::fErrors;
 
 #define float_str(value, f) QString::number(value, 'f', f).remove(QRegExp("\\.0+$")).remove(QRegExp("\\.$"))
@@ -38,7 +39,7 @@ void PrintTaxN::makeRequestHeader(quint8 *dst, quint8 request, quint16 dataLen)
 {
     memcpy(dst, &firstdata[0], 12);
     dst[8] = request;
-    char chLen[2];
+    quint8 chLen[2];
     memcpy(&chLen[0], &dataLen, sizeof(qint16));
     dst[10] = chLen[1];
     dst[11] = chLen[0];
@@ -48,12 +49,12 @@ int PrintTaxN::getResponse(QByteArray &out, QString &err)
 {
     out.clear();
     quint8 fd[11];
-    quint64 bytesTotal;
+    qint64 bytesTotal;
     if (fTcpSocket.waitForReadyRead(1300000)) {
         bytesTotal = fTcpSocket.bytesAvailable();
         fTcpSocket.read(reinterpret_cast<char*>(&fd[0]), 11);
         bytesTotal -= 11;
-        qint16 dataLen;
+        quint16 dataLen;
         memcpy(&dataLen, &fd[7], 2);
         dataLen = ntohs(dataLen);
         out.clear();
@@ -103,13 +104,13 @@ void PrintTaxN::cryptData(const QByteArray &k, QByteArray &inData, QByteArray &o
     DES_set_key_unchecked((const_DES_cblock*)block_key, &ks3);
 
     qint16 srcLen = inData.length();
-    char out[srcLen];
-    memset(&out, 0, srcLen);
+    char *out = new char[srcLen];
+    memset(out, 0, srcLen);
     for (int i = 0; i < srcLen; i += 8) {
         DES_ecb3_encrypt((const_DES_cblock*)&inData.data()[i], (DES_cblock*)&out[i], &ks, &ks2, &ks3, DES_ENCRYPT);
     }
-    outData.append(&out[0], srcLen);
-
+    outData.append(out, srcLen);
+    delete [] out;
 
 }
 
@@ -133,12 +134,13 @@ void PrintTaxN::decryptData(const QByteArray &k, QByteArray &inData, QByteArray 
     memcpy(block_key, key + 16, 8);
     DES_set_key_unchecked((const_DES_cblock*)block_key, &ks3);
 
-    char out[inData.length()];
-    memset(&out, 0, inData.length());
+    char *out = new char[inData.length()];
+    memset(out, 0, inData.length());
     for (int i = 0; i < inData.length(); i += 8) {
         DES_ecb3_encrypt((const_DES_cblock*)&inData.data()[i], (DES_cblock*)&out[i], &ks, &ks2, &ks3, DES_DECRYPT);
     }
     outData.append(out, inData.length());
+    delete [] out;
 }
 
 void PrintTaxN::parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal,
@@ -173,8 +175,21 @@ void PrintTaxN::parseResponse(const QString &in, QString &firm, QString &hvhh, Q
     time = QDateTime::fromMSecsSinceEpoch(time.toDouble()).toString("dd.MM.yyyy HH:mm:ss");
 }
 
+void PrintTaxN::logMessage(const QString &msg)
+{
+    TimerResult tr;
+    tr.fDate = QDate::currentDate();
+    tr.fTime = QTime::currentTime();
+    tr.fMsg = msg;
+    tr.fElapsed = fTimer.elapsed();
+    fTimerResult << tr;
+    fTimer.restart();
+}
+
 PrintTaxN::PrintTaxN()
 {
+    fTimer.start();
+    logMessage("Constructor");
     if (fErrors.count() == 0) {
         initErrors();
     }
@@ -187,6 +202,8 @@ PrintTaxN::PrintTaxN()
 PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, QObject *parent) :
     QObject(parent)
 {
+    fTimer.start();
+    logMessage("Constructor");
     setParams(ip, port, password);
     if (fErrors.count() == 0) {
         initErrors();
@@ -275,16 +292,22 @@ int PrintTaxN::printJSON(QByteArray &jsonData, QString &err, quint8 opcode)
     int result = pt_err_ok;
     QByteArray out;
 
+    logMessage("Print JSON, connect to host");
     if ((result = connectToHost(err))) {
+        logMessage("Print JSON, connection failed");
         return result;
     }
     jsonLogin(out);
     quint8 fd[12];
     makeRequestHeader(&fd[0], opcode_login, out.length());
 
+    logMessage("Print JSON, connected");
+
     fTcpSocket.write(reinterpret_cast<const char*>(&fd[0]), 12);
     fTcpSocket.write(out, out.length());
     fTcpSocket.flush();
+
+    logMessage("Print JSON, header request");
 
     if ((result = getResponse(out, err)) != 200) {
         if (result > 0) {
@@ -292,6 +315,9 @@ int PrintTaxN::printJSON(QByteArray &jsonData, QString &err, quint8 opcode)
         }
         return result;
     }
+
+    logMessage("Print JSON, response of header");
+
     decryptData(fPassSHA256, out, fSessionPass);
     char c = fSessionPass.at(fSessionPass.length() - 1);
     if (c < 8) {
@@ -306,15 +332,22 @@ int PrintTaxN::printJSON(QByteArray &jsonData, QString &err, quint8 opcode)
     cryptData(fSessionPass, jsonData, out);
     makeRequestHeader(&fd[0], opcode, out.length());
 
+    logMessage("Print JSON, crypt main data");
+
     fTcpSocket.write(reinterpret_cast<const char*>(&fd[0]), 12);
     fTcpSocket.write(out, out.length());
     fTcpSocket.flush();
+
+    logMessage("Print JSON, write main data");
+
     if ((result = getResponse(jsonData, err)) != 200) {
         if (result > 0) {
             jsonData = fErrors[result].toUtf8();
         }
         return result;
     }
+
+    logMessage("Print JSON, read response");
 
     decryptData(fSessionPass, jsonData, out);
     if (out.length() > 0) {
@@ -329,6 +362,8 @@ int PrintTaxN::printJSON(QByteArray &jsonData, QString &err, quint8 opcode)
     }
     jsonData = out;
     fTcpSocket.close();
+
+    logMessage("Print JSON, end");
 
     return 0;
 }
@@ -432,4 +467,18 @@ int PrintTaxN::printTaxback(int number, const QString &crn, QString &outInJson, 
     int result = printJSON(jdata, err, opcode_taxback);
     outOutJson = jdata;
     return result;
+}
+
+void PrintTaxN::saveTimeResult(const QString &mark, QSqlQuery &query)
+{
+    foreach (TimerResult t, fTimerResult) {
+        query.prepare("insert into o_tax_debug (f_date, f_time, f_mark, f_message, f_elapsed) values (:f_date, :f_time, :f_mark, :f_message, :f_elapsed)");
+        query.bindValue(":f_date", t.fDate);
+        query.bindValue(":f_time", t.fTime);
+        query.bindValue(":f_mark", mark);
+        query.bindValue(":f_message", t.fMsg);
+        query.bindValue(":f_elapsed", t.fElapsed);
+        query.exec();
+        qDebug() << query.lastError().databaseText();
+    }
 }

@@ -4,6 +4,10 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QJsonDocument>
+#include <QElapsedTimer>
+#include <QDate>
+#include <QTime>
+#include <QSqlQuery>
 
 #define pt_err_crn_empty -7
 #define pt_err_no_tax_in_db -6
@@ -19,11 +23,18 @@
 #define opcode_PrintTaxN 4
 #define opcode_taxback 6
 
+typedef struct {
+    QDate fDate;
+    QTime fTime;
+    QString fMsg;
+    int fElapsed;
+} TimerResult;
+
 class PrintTaxN : public QObject
 {
     Q_OBJECT
     QString fIP;
-    int fPort;
+    quint16 fPort;
     QString fPassword;
     QByteArray fPassSHA256;
     QByteArray fSessionPass;
@@ -47,12 +58,16 @@ public:
     int makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err);
     int printAdvanceJson(double advanceCash, double advanceCard, QString &outInJson, QString &outOutJson, QString &err);
     int printTaxback(int number, const QString &crn, QString &outInJson, QString &outOutJson, QString &err);
+    void saveTimeResult(const QString &mark, QSqlQuery &query);
     QJsonDocument fJSONDoc;
     QString fPartnerTin;
     static void parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal, QString &number, QString &sn, QString &address, QString &devnum, QString &time);
 signals:
     void done(int code, const QString &message);
-public slots:
+private:
+    QElapsedTimer fTimer;
+    QList<TimerResult> fTimerResult;
+    void logMessage(const QString &msg);
 };
 
 #endif // PRINTTAXN_H

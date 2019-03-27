@@ -1,6 +1,6 @@
 QT -= gui
 
-QT += network
+QT += network sql
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -24,6 +24,7 @@ HEADERS += \
     printtaxn.h
 
 INCLUDEPATH += C:/OpenSSL-Win32/include
+INCLUDEPATH += C:/OpenSSL-Win32/include/openssl
 
 LIBS += -LC:/OpenSSL-Win32/lib
 LIBS += -lopenssl
