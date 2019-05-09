@@ -55,7 +55,7 @@ public:
     void initErrors();
     int printJSON(QByteArray &jsonData, QString &err, quint8 opcode);
     void addGoods(const QString &dep, const QString &adgt, const QString &code, const QString &name, double price, double qty);
-    int makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err);
+    int makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err, double discount = 0.00);
     int printAdvanceJson(double advanceCash, double advanceCard, QString &outInJson, QString &outOutJson, QString &err);
     int printTaxback(int number, const QString &crn, QString &outInJson, QString &outOutJson, QString &err);
     void saveTimeResult(const QString &mark, QSqlQuery &query);
@@ -68,6 +68,7 @@ private:
     QElapsedTimer fTimer;
     QList<TimerResult> fTimerResult;
     void logMessage(const QString &msg);
+    double fDiscount;
 };
 
 #endif // PRINTTAXN_H

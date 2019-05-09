@@ -390,8 +390,12 @@ void PrintTaxN::addGoods(const QString &dep, const QString &adgt, const QString 
     fJsonHeader["paidAmount"] = totalCash;
 }
 
-int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err)
+int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err, double discount)
 {
+    fDiscount = discount;
+    if (fDiscount > 0.01) {
+        fJsonHeader["paidAmount"] = fJsonHeader["paidAmount"].toDouble() - (fJsonHeader["paidAmount"].toDouble() * (fDiscount / 100));
+    }
     fJsonHeader["paidAmountCard"] = card;
     fJsonHeader["prePaymentAmount"] = prepaid;
     fJsonHeader["paidAmount"] = fJsonHeader["paidAmount"].toDouble() - card - prepaid;
@@ -428,6 +432,9 @@ int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson,
                 break;
             }
         }
+        if (fDiscount > 0.01) {
+            json += QString(",\"%1\":%2,\"discountType\":1").arg("discount").arg(QString::number(fDiscount, 'f', 2));
+        }
         json += "}";
     }
     json += "]}";
@@ -436,7 +443,7 @@ int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson,
     int result = printJSON(jdata, err, opcode_PrintTaxN);
     outOutJson = jdata;
 #ifdef QT_DEBUG
-    outOutJson = "{\"rseq\":77,\"crn\":\"53219917\",\"sn\":\"V98745506068\",\"tin\":\"01588771\",\"taxpayer\":\"«Ջազզվե ՍՊԸ»\",\"address\":\"Արշակունյանց 34\",\"time\":1527853613000.0,\"fiscal\":\"98802057\",\"lottery\":\"00000000\",\"prize\":0,\"total\":1540.0,\"change\":0.0}";
+    outOutJson = "{\"rseq\":77,\"crn\":\"63219817\",\"sn\":\"V98745506068\",\"tin\":\"01588771\",\"taxpayer\":\"«Ռոգա էնդ կոպիտա ՍՊԸ»\",\"address\":\"Արշակունյանց 34\",\"time\":1527853613000.0,\"fiscal\":\"98198105\",\"lottery\":\"00000000\",\"prize\":0,\"total\":1540.0,\"change\":0.0}";
     result = 0;
 #endif
     return result;
