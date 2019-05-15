@@ -368,7 +368,7 @@ int PrintTaxN::printJSON(QByteArray &jsonData, QString &err, quint8 opcode)
     return 0;
 }
 
-void PrintTaxN::addGoods(const QString &dep, const QString &adgt, const QString &code, const QString &name, double price, double qty)
+void PrintTaxN::addGoods(const QString &dep, const QString &adgt, const QString &code, const QString &name, double price, double qty, double discount)
 {
 
     QMap<QString, QVariant> data;
@@ -380,22 +380,26 @@ void PrintTaxN::addGoods(const QString &dep, const QString &adgt, const QString 
     data["qty"] = qty;
     data["totalPrice"] = price * qty;
     data["unit"] = QString::fromUtf8("հատ");
+    if (discount > 0.01) {
+        data["discount"] = discount;
+        data["discountType"] = 1;
+    }
     fJsonGoods.append(data);
 
     double totalCash = 0;
     for (int i = 0; i < fJsonGoods.count(); i++) {
         QMap<QString, QVariant> &g = fJsonGoods[i];
-        totalCash += g["totalPrice"].toDouble();
+        double t = g["totalPrice"].toDouble();
+        if (g.contains("discount")) {
+            t -= (t * (g["discount"].toDouble() / 100));
+        }
+        totalCash += t;
     }
     fJsonHeader["paidAmount"] = totalCash;
 }
 
-int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err, double discount)
+int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson, QString &outOutJson, QString &err)
 {
-    fDiscount = discount;
-    if (fDiscount > 0.01) {
-        fJsonHeader["paidAmount"] = fJsonHeader["paidAmount"].toDouble() - (fJsonHeader["paidAmount"].toDouble() * (fDiscount / 100));
-    }
     fJsonHeader["paidAmountCard"] = card;
     fJsonHeader["prePaymentAmount"] = prepaid;
     fJsonHeader["paidAmount"] = fJsonHeader["paidAmount"].toDouble() - card - prepaid;
@@ -431,9 +435,6 @@ int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson,
                 json += "\"" + it.value().toString() + "\"";
                 break;
             }
-        }
-        if (fDiscount > 0.01) {
-            json += QString(",\"%1\":%2,\"discountType\":1").arg("discount").arg(QString::number(fDiscount, 'f', 2));
         }
         json += "}";
     }
