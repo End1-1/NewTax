@@ -87,7 +87,7 @@ void PrintTaxN::cryptData(const QByteArray &k, QByteArray &inData, QByteArray &o
         inData.append((char)jsonFillCount);
     }
 
-    int key_len = 24;
+    size_t key_len = 24;
     unsigned char key[24];
     unsigned char block_key[9];
     DES_key_schedule ks,ks2,ks3;
@@ -118,7 +118,7 @@ void PrintTaxN::decryptData(const QByteArray &k, QByteArray &inData, QByteArray 
 {
     outData.clear();
 
-    int key_len = 24;
+    size_t key_len = 24;
     unsigned char key[24];
     unsigned char block_key[9];
     DES_key_schedule ks,ks2,ks3;
@@ -172,7 +172,7 @@ void PrintTaxN::parseResponse(const QString &in, QString &firm, QString &hvhh, Q
     pos = in.indexOf("\"time\":") + 7;
     pos2 = in.indexOf(",", pos + 1);
     time = in.mid(pos, pos2 - pos);
-    time = QDateTime::fromMSecsSinceEpoch(time.toDouble()).toString("dd.MM.yyyy HH:mm:ss");
+    time = QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(time.toDouble())).toString("dd.MM.yyyy HH:mm:ss");
 }
 
 void PrintTaxN::logMessage(const QString &msg)
