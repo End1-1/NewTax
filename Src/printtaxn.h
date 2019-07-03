@@ -48,6 +48,7 @@ class PrintTaxN : public QObject
     void decryptData(const QByteArray &k, QByteArray &inData, QByteArray &outData);
     QMap<QString, QVariant> fJsonHeader;
     QList<QMap<QString, QVariant> > fJsonGoods;
+
 public:
     PrintTaxN();
     explicit PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, QObject *parent = nullptr);
@@ -64,6 +65,7 @@ public:
     static void parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal, QString &number, QString &sn, QString &address, QString &devnum, QString &time);
 signals:
     void done(int code, const QString &message);
+
 private:
     QElapsedTimer fTimer;
     QList<TimerResult> fTimerResult;
