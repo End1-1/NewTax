@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QJsonObject>
+#include <QMessageBox>
 #include <QDateTime>
 #include <QSqlError>
 #include <QRegExp>
@@ -15,6 +16,8 @@
 
 static quint8 firstdata[] = {213, 128, 212, 180, 213, 132, 0, 5, 2, 0, 0, 0};
 QMap<int, QString> PrintTaxN::fErrors;
+QString PrintTaxN::fTaxCashier;
+QString PrintTaxN::fTaxPin;
 
 #define float_str(value, f) QString::number(value, 'f', f).remove(QRegExp("\\.0+$")).remove(QRegExp("\\.$"))
 
@@ -30,8 +33,15 @@ int PrintTaxN::connectToHost(QString &err)
 
 void PrintTaxN::jsonLogin(QByteArray &out)
 {
+    if (fTaxCashier.isEmpty()) {
+        fTaxCashier = "3";
+        fTaxPin = "3";
+//  Other variant: 3, 4321
+//        QMessageBox::critical(0, "Fiscal", tr("You should to setup cashier and pin before to use fiscal printer"));
+//        return;
+    }
     fPassSHA256 = QCryptographicHash::hash(fPassword.toLatin1(), QCryptographicHash::Sha256).mid(0, 24);
-    QByteArray authStr = QString("{\"password\":\"%1\",\"cashier\":3,\"pin\":\"3\"}").arg(fPassword).toUtf8();
+    QByteArray authStr = QString("{\"password\":\"%1\",\"cashier\":%2,\"pin\":\"%3\"}").arg(fPassword).arg(fTaxCashier).arg(fTaxPin).toUtf8();
     cryptData(fPassSHA256, authStr, out);
 }
 

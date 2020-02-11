@@ -62,6 +62,8 @@ public:
     void saveTimeResult(const QString &mark, QSqlQuery &query);
     QJsonDocument fJSONDoc;
     QString fPartnerTin;
+    static QString fTaxCashier;
+    static QString fTaxPin;
     static void parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal, QString &number, QString &sn, QString &address, QString &devnum, QString &time);
 signals:
     void done(int code, const QString &message);
