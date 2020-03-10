@@ -490,7 +490,7 @@ int PrintTaxN::printTaxback(int number, const QString &crn, QString &outInJson, 
 void PrintTaxN::saveTimeResult(const QString &mark, QSqlQuery &query)
 {
     foreach (TimerResult t, fTimerResult) {
-        query.prepare("insert into o_tax_debug (f_date, f_time, f_mark, f_message, f_elapsed) values (:f_date, :f_time, :f_mark, :f_message, :f_elapsed)");
+        query.prepare("insert into o_tax_debug (f_id, f_date, f_time, f_mark, f_message, f_elapsed) values (uuid(), :f_date, :f_time, :f_mark, :f_message, :f_elapsed)");
         query.bindValue(":f_date", t.fDate);
         query.bindValue(":f_time", t.fTime);
         query.bindValue(":f_mark", mark);
