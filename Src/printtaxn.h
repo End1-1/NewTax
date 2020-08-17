@@ -41,7 +41,7 @@ class PrintTaxN : public QObject
     QTcpSocket fTcpSocket;
     static QMap<int, QString> fErrors;
     int connectToHost(QString &err);
-    void jsonLogin(QByteArray &out);
+    bool jsonLogin(QByteArray &out);
     void makeRequestHeader(quint8 *dst, quint8 request, quint16 dataLen);
     int getResponse(QByteArray &out, QString &err);
     void cryptData(const QByteArray &k, QByteArray &inData, QByteArray &outData);
@@ -51,7 +51,7 @@ class PrintTaxN : public QObject
 
 public:
     PrintTaxN();
-    explicit PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, QObject *parent = nullptr);
+    explicit PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, const QString &opcode, const QString &oppin, QObject *parent = nullptr);
     void setParams(const QString &ip, int port, const QString &password);
     void initErrors();
     int printJSON(QByteArray &jsonData, QString &err, quint8 opcode);
@@ -62,8 +62,8 @@ public:
     void saveTimeResult(const QString &mark, QSqlQuery &query);
     QJsonDocument fJSONDoc;
     QString fPartnerTin;
-    static QString fTaxCashier;
-    static QString fTaxPin;
+    QString fTaxCashier;
+    QString fTaxPin;
     static void parseResponse(const QString &in, QString &firm, QString &hvhh, QString &fiscal, QString &number, QString &sn, QString &address, QString &devnum, QString &time);
 signals:
     void done(int code, const QString &message);

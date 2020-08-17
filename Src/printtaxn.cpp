@@ -16,8 +16,6 @@
 
 static quint8 firstdata[] = {213, 128, 212, 180, 213, 132, 0, 5, 2, 0, 0, 0};
 QMap<int, QString> PrintTaxN::fErrors;
-QString PrintTaxN::fTaxCashier;
-QString PrintTaxN::fTaxPin;
 
 #define float_str(value, f) QString::number(value, 'f', f).remove(QRegExp("\\.0+$")).remove(QRegExp("\\.$"))
 
@@ -31,7 +29,7 @@ int PrintTaxN::connectToHost(QString &err)
     return pt_err_ok;
 }
 
-void PrintTaxN::jsonLogin(QByteArray &out)
+bool PrintTaxN::jsonLogin(QByteArray &out)
 {
     if (fTaxCashier.isEmpty()) {
         fTaxCashier = "3";
@@ -39,10 +37,12 @@ void PrintTaxN::jsonLogin(QByteArray &out)
 //  Other variant: 3, 4321
 //        QMessageBox::critical(0, "Fiscal", tr("You should to setup cashier and pin before to use fiscal printer"));
 //        return;
+        return false;
     }
     fPassSHA256 = QCryptographicHash::hash(fPassword.toLatin1(), QCryptographicHash::Sha256).mid(0, 24);
     QByteArray authStr = QString("{\"password\":\"%1\",\"cashier\":%2,\"pin\":\"%3\"}").arg(fPassword).arg(fTaxCashier).arg(fTaxPin).toUtf8();
     cryptData(fPassSHA256, authStr, out);
+    return true;
 }
 
 void PrintTaxN::makeRequestHeader(quint8 *dst, quint8 request, quint16 dataLen)
@@ -209,7 +209,7 @@ PrintTaxN::PrintTaxN()
     fJsonHeader["userExtPOS"] = "true";
 }
 
-PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, QObject *parent) :
+PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, const QString &opcode, const QString &oppin, QObject *parent) :
     QObject(parent)
 {
     fTimer.start();
@@ -218,7 +218,8 @@ PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, const
     if (fErrors.count() == 0) {
         initErrors();
     }
-
+    fTaxCashier = opcode;
+    fTaxPin = oppin;
     fJsonHeader["paidAmount"] = 0.0;
     fJsonHeader["paidAmountCard"] = 0.0;
     fJsonHeader["prePaymentAmount"] = 0.0;
