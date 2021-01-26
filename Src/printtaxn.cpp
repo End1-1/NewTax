@@ -31,12 +31,12 @@ int PrintTaxN::connectToHost(QString &err)
 
 bool PrintTaxN::jsonLogin(QByteArray &out)
 {
+   // QMessageBox::information(0, "", QString("%1, %2").arg(fTaxCashier, fTaxPin));
     if (fTaxCashier.isEmpty()) {
         fTaxCashier = "3";
         fTaxPin = "3";
 //  Other variant: 3, 4321
-//        QMessageBox::critical(0, "Fiscal", tr("You should to setup cashier and pin before to use fiscal printer"));
-//        return;
+        QMessageBox::critical(0, "Fiscal", tr("You should to setup cashier and pin before to use fiscal printer"));
         return false;
     }
     fPassSHA256 = QCryptographicHash::hash(fPassword.toLatin1(), QCryptographicHash::Sha256).mid(0, 24);
@@ -207,6 +207,8 @@ PrintTaxN::PrintTaxN()
     fJsonHeader["paidAmountCard"] = 0.0;
     fJsonHeader["prePaymentAmount"] = 0.0;
     fJsonHeader["userExtPOS"] = "true";
+    fTaxCashier = "3";
+    fTaxPin = "3";
 }
 
 PrintTaxN::PrintTaxN(const QString &ip, int port, const QString &password, const QString &extPos, const QString &opcode, const QString &oppin, QObject *parent) :
@@ -440,7 +442,7 @@ int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson,
             json += "\"" + it.key() + "\":";
             switch (it.value().type()) {
             case QVariant::Double:
-                json += float_str(it.value().toDouble(), 2);
+                json += float_str(it.value().toDouble(), 3);
                 break;
             default:
                 json += "\"" + it.value().toString() + "\"";
