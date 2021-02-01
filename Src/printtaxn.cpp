@@ -422,7 +422,7 @@ int PrintTaxN::makeJsonAndPrint(double card, double prepaid, QString &outInJson,
                     .arg(float_str(fJsonHeader["paidAmountCard"].toDouble(), 2))
                     .arg(float_str(fJsonHeader["prePaymentAmount"].toDouble(), 2))
                     .arg(fJsonHeader["userExtPOS"].toString())
-                    .arg(fPartnerTin.length() > 0 ? QString("\"partnerTin\":%1,").arg(fPartnerTin) : "");
+                    .arg(fPartnerTin.length() > 0 ? QString("\"partnerTin\":\"%1\",").arg(fPartnerTin) : "");
     bool first = true;
     for (int i = 0; i < fJsonGoods.count(); i++) {
         if (first) {
